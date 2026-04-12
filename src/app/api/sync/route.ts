@@ -96,13 +96,13 @@ export async function POST(request: Request) {
     );
 
     const toInsert: object[] = [];
-    const toUpdate: { episode_uuid: string; played_up_to: number; duration: number }[] = [];
+    const toUpdate: { episode_uuid: string; played_up_to: number; duration: number; listened_date: string }[] = [];
 
     for (const ep of episodes) {
       if (!ep.uuid) continue;
       const existing = existingMap.get(ep.uuid);
       if (existing) {
-        // Update played_up_to and duration if they increased
+        // Update played_up_to, duration, and listened_date if progress increased
         if (
           ep.playedUpTo > existing.played_up_to ||
           ep.duration > existing.duration
@@ -111,6 +111,7 @@ export async function POST(request: Request) {
             episode_uuid: ep.uuid,
             played_up_to: Math.max(ep.playedUpTo, existing.played_up_to),
             duration: Math.max(ep.duration, existing.duration),
+            listened_date: ep.listenedDate || now,
           });
         }
       } else {
@@ -138,7 +139,7 @@ export async function POST(request: Request) {
     for (const upd of toUpdate) {
       await service
         .from("episodes")
-        .update({ played_up_to: upd.played_up_to, duration: upd.duration })
+        .update({ played_up_to: upd.played_up_to, duration: upd.duration, listened_date: upd.listened_date })
         .eq("user_id", userId)
         .eq("episode_uuid", upd.episode_uuid);
     }
