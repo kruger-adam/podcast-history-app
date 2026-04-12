@@ -35,9 +35,24 @@ export async function POST(request: Request) {
   const service = createServiceClient();
   const username = user.user_metadata?.username;
   if (username) {
-    await service
+    const { error: profileError } = await service
       .from("profiles")
       .upsert({ id: user.id, username }, { onConflict: "id" });
+    if (profileError) {
+      console.error("Profile upsert failed:", profileError);
+      return NextResponse.json({ error: `Profile error: ${profileError.message}` }, { status: 500 });
+    }
+  } else {
+    // Check if a profile already exists
+    const { data: existingProfile } = await service
+      .from("profiles")
+      .select("id")
+      .eq("id", user.id)
+      .maybeSingle();
+    if (!existingProfile) {
+      console.error("No profile and no username in metadata for user:", user.id, "metadata:", user.user_metadata);
+      return NextResponse.json({ error: "Account setup incomplete: no username found. Please contact support." }, { status: 500 });
+    }
   }
 
   // Encrypt and store
@@ -52,7 +67,8 @@ export async function POST(request: Request) {
   );
 
   if (error) {
-    return NextResponse.json({ error: "Failed to save credentials" }, { status: 500 });
+    console.error("Credentials upsert failed:", error);
+    return NextResponse.json({ error: `DB error: ${error.message}` }, { status: 500 });
   }
 
   return NextResponse.json({ success: true });
