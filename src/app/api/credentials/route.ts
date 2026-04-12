@@ -31,8 +31,16 @@ export async function POST(request: Request) {
     );
   }
 
-  // Encrypt and store
+  // Ensure the profile row exists (FK required by credentials table)
   const service = createServiceClient();
+  const username = user.user_metadata?.username;
+  if (username) {
+    await service
+      .from("profiles")
+      .upsert({ id: user.id, username }, { onConflict: "id" });
+  }
+
+  // Encrypt and store
   const { error } = await service.from("credentials").upsert(
     {
       user_id: user.id,
