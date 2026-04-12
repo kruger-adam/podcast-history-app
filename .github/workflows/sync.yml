@@ -1,0 +1,39 @@
+name: Sync All Users
+
+on:
+  schedule:
+    - cron: "0 */12 * * *"  # Every 12 hours
+  workflow_dispatch:         # Allow manual trigger
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch user list
+        id: list
+        env:
+          SYNC_API_URL: ${{ secrets.SYNC_API_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          USER_IDS=$(curl -sf \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            "$SYNC_API_URL?action=list-users" | jq -r '.user_ids[]')
+          echo "user_ids<<EOF" >> $GITHUB_OUTPUT
+          echo "$USER_IDS" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Sync each user
+        env:
+          SYNC_API_URL: ${{ secrets.SYNC_API_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          echo "${{ steps.list.outputs.user_ids }}" | while IFS= read -r uid; do
+            [ -z "$uid" ] && continue
+            echo "Syncing $uid..."
+            curl -sf -X POST \
+              -H "Authorization: Bearer $CRON_SECRET" \
+              -H "Content-Type: application/json" \
+              -d "{\"user_id\": \"$uid\"}" \
+              "$SYNC_API_URL" || echo "Failed: $uid"
+            sleep 2
+          done
