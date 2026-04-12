@@ -6,6 +6,7 @@ import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import PasswordInput from "@/components/PasswordInput";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -44,12 +45,7 @@ export default function LoginPage() {
         </label>
         <label>
           Password
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
+          <PasswordInput value={password} onChange={(e) => setPassword(e.target.value)} required />
         </label>
         {error && <p className="auth-error">{error}</p>}
         <button type="submit" disabled={loading} className="btn-primary">

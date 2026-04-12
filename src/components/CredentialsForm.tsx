@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import PasswordInput from "@/components/PasswordInput";
 
 export default function CredentialsForm({ hasExisting }: { hasExisting: boolean }) {
   const [email, setEmail] = useState("");
@@ -45,12 +46,7 @@ export default function CredentialsForm({ hasExisting }: { hasExisting: boolean 
       </label>
       <label>
         Pocket Casts password
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
+        <PasswordInput value={password} onChange={(e) => setPassword(e.target.value)} required />
       </label>
       {error && <p className="auth-error">{error}</p>}
       <button type="submit" disabled={loading} className="btn-primary">
