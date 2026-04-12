@@ -40,6 +40,7 @@ export async function fetchEpisodes(
         throw new Error(`Pocket Casts ${endpoint} failed: ${resp.status}`);
       }
       const data = await resp.json();
+      console.log(`[pocketcasts] ${endpoint} raw episodes[0..2]:`, JSON.stringify((data.episodes || []).slice(0, 3), null, 2));
       return (data.episodes || []) as PocketCastsEpisode[];
     })
   );
