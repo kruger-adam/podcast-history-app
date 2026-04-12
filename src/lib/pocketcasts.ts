@@ -25,9 +25,8 @@ export async function login(
 export async function fetchEpisodes(
   token: string
 ): Promise<PocketCastsEpisode[]> {
-  const endpoints = ["/user/history", "/user/in_progress"];
-  const results = await Promise.all(
-    endpoints.map(async (endpoint) => {
+  const [historyData, inProgressData] = await Promise.all(
+    ["/user/history", "/user/in_progress"].map(async (endpoint) => {
       const resp = await fetch(`${API_BASE}${endpoint}`, {
         method: "POST",
         headers: {
@@ -39,21 +38,36 @@ export async function fetchEpisodes(
       if (!resp.ok) {
         throw new Error(`Pocket Casts ${endpoint} failed: ${resp.status}`);
       }
-      const data = await resp.json();
-      console.log(`[pocketcasts] ${endpoint} raw episodes[0..2]:`, JSON.stringify((data.episodes || []).slice(0, 3), null, 2));
-      return (data.episodes || []) as PocketCastsEpisode[];
+      return resp.json();
     })
   );
 
-  // Deduplicate by uuid
+  const historyEpisodes = (historyData.episodes || []) as PocketCastsEpisode[];
+  const inProgressEpisodes = (inProgressData.episodes || []) as PocketCastsEpisode[];
+
+  const now = Date.now();
   const byUuid = new Map<string, PocketCastsEpisode>();
-  for (const episodes of results) {
-    for (const ep of episodes) {
-      if (ep.uuid) {
-        byUuid.set(ep.uuid, ep);
-      }
+
+  // Assign listenedDate based on position in history — index 0 is most recent
+  historyEpisodes.forEach((ep, index) => {
+    if (ep.uuid) {
+      byUuid.set(ep.uuid, {
+        ...ep,
+        listenedDate: new Date(now - index * 60_000).toISOString(),
+      });
     }
-  }
+  });
+
+  // In-progress episodes not already in history get the current time
+  inProgressEpisodes.forEach((ep) => {
+    if (ep.uuid && !byUuid.has(ep.uuid)) {
+      byUuid.set(ep.uuid, {
+        ...ep,
+        listenedDate: new Date(now).toISOString(),
+      });
+    }
+  });
+
   return Array.from(byUuid.values());
 }
 

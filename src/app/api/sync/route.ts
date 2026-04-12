@@ -124,7 +124,7 @@ export async function POST(request: Request) {
           duration: ep.duration || 0,
           played_up_to: ep.playedUpTo || 0,
           url: ep.url || "",
-          listened_date: now,
+          listened_date: ep.listenedDate || now,
         });
       }
     }

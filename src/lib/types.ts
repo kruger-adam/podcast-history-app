@@ -44,6 +44,7 @@ export interface PocketCastsEpisode {
   duration: number;
   playedUpTo: number;
   url: string;
+  listenedDate?: string;
 }
 
 export interface PocketCastsStats {
