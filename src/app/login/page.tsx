@@ -4,13 +4,22 @@ export const dynamic = "force-dynamic";
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import PasswordInput from "@/components/PasswordInput";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const searchParams = useSearchParams();
+  const urlError = searchParams.get("error");
+  const urlErrorMessage =
+    urlError === "profile_setup"
+      ? "Account setup failed. Please try signing up again or contact support."
+      : urlError === "auth"
+      ? "Confirmation link is invalid or has expired."
+      : null;
+
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -32,6 +41,7 @@ export default function LoginPage() {
   return (
     <div className="auth-container">
       <h1>Sign in</h1>
+      {urlErrorMessage && <p className="auth-error">{urlErrorMessage}</p>}
       <form onSubmit={handleSubmit} className="auth-form">
         <label>
           Email

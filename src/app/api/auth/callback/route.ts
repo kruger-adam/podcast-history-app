@@ -1,4 +1,4 @@
-import { createServerClient } from "@/lib/supabase/server";
+import { createServerClient, createServiceClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
@@ -16,11 +16,16 @@ export async function GET(request: Request) {
       if (user) {
         const username = user.user_metadata?.username;
         if (username) {
-          // upsert so a double-click on the confirmation link doesn't error
-          await supabase.from("profiles").upsert(
-            { id: user.id, username },
-            { onConflict: "id" }
-          );
+          // Use service client so this never fails due to RLS or session timing
+          const service = createServiceClient();
+          const { error: profileError } = await service
+            .from("profiles")
+            .upsert({ id: user.id, username }, { onConflict: "id" });
+
+          if (profileError) {
+            console.error("Profile creation failed:", profileError);
+            return NextResponse.redirect(`${origin}/login?error=profile_setup`);
+          }
         }
       }
 
