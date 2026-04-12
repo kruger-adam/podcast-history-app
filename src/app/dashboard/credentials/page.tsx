@@ -23,6 +23,9 @@ export default async function CredentialsPage() {
         <p className="subtitle">
           Your credentials are encrypted and stored securely. They&apos;re used only to sync your listening history.
         </p>
+        <p className="subtitle">
+          Note: only Pocket Casts accounts created with email and password are supported. Accounts created via &ldquo;Sign in with Apple&rdquo; or Google are not currently supported.
+        </p>
       </div>
       <CredentialsForm hasExisting={!!creds} />
     </div>
