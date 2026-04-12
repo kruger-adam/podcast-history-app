@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { createServerClient, createServiceClient } from "@/lib/supabase/server";
 import SyncButton from "@/components/SyncButton";
+import ReorderButton from "@/components/ReorderButton";
 import NoteEditor from "@/components/NoteEditor";
 import Link from "next/link";
 import type { Episode, Note, SyncState } from "@/lib/types";
@@ -84,6 +85,7 @@ export default async function DashboardPage() {
           {episodes.length} episodes
         </p>
         <SyncButton />
+        <ReorderButton />
       </div>
 
       {episodes.length > 0 && (
