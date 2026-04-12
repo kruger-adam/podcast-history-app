@@ -4,7 +4,6 @@ export const dynamic = "force-dynamic";
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import PasswordInput from "@/components/PasswordInput";
 
@@ -14,7 +13,7 @@ export default function SignupPage() {
   const [username, setUsername] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
+  const [done, setDone] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -29,29 +28,50 @@ export default function SignupPage() {
     }
 
     const supabase = createClient();
-    const { data, error: signUpError } = await supabase.auth.signUp({ email, password });
-    if (signUpError || !data.user) {
-      setError(signUpError?.message || "Sign up failed");
+
+    // Check username availability before creating the account
+    const { data: existing } = await supabase
+      .from("profiles")
+      .select("username")
+      .eq("username", usernameClean)
+      .maybeSingle();
+
+    if (existing) {
+      setError("That username is already taken.");
       setLoading(false);
       return;
     }
 
-    const { error: profileError } = await supabase.from("profiles").insert({
-      id: data.user.id,
-      username: usernameClean,
+    const { error: signUpError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { username: usernameClean },
+        emailRedirectTo: `${location.origin}/api/auth/callback`,
+      },
     });
 
-    if (profileError) {
-      if (profileError.message.includes("duplicate") || profileError.code === "23505") {
-        setError("That username is already taken.");
-      } else {
-        setError(profileError.message);
-      }
+    if (signUpError) {
+      setError(signUpError.message);
       setLoading(false);
       return;
     }
 
-    router.push("/dashboard/credentials");
+    setDone(true);
+  }
+
+  if (done) {
+    return (
+      <div className="auth-container">
+        <h1>Check your email</h1>
+        <p className="subtitle">
+          We sent a confirmation link to <strong>{email}</strong>. Click it to activate your account and sign in.
+        </p>
+        <p className="auth-footer">
+          Wrong email? <Link href="/signup">Start over</Link>
+        </p>
+      </div>
+    );
   }
 
   return (
