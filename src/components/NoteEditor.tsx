@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 interface NoteEditorProps {
   episodeUuid: string;
@@ -17,6 +17,22 @@ export default function NoteEditor({
   const [takeaways, setTakeaways] = useState(initialTakeaways || "");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const reasonRef = useRef<HTMLTextAreaElement>(null);
+  const takeawaysRef = useRef<HTMLTextAreaElement>(null);
+
+  const autoResize = useCallback((el: HTMLTextAreaElement | null) => {
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = el.scrollHeight + "px";
+  }, []);
+
+  useEffect(() => {
+    autoResize(reasonRef.current);
+  }, [reason, autoResize]);
+
+  useEffect(() => {
+    autoResize(takeawaysRef.current);
+  }, [takeaways, autoResize]);
 
   async function save() {
     setSaving(true);
@@ -39,6 +55,7 @@ export default function NoteEditor({
       <label>
         <span className="note-label">Why I listened</span>
         <textarea
+          ref={reasonRef}
           value={reason}
           onChange={(e) => setReason(e.target.value)}
           onBlur={save}
@@ -49,6 +66,7 @@ export default function NoteEditor({
       <label>
         <span className="note-label">Takeaways</span>
         <textarea
+          ref={takeawaysRef}
           value={takeaways}
           onChange={(e) => setTakeaways(e.target.value)}
           onBlur={save}

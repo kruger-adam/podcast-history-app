@@ -175,7 +175,8 @@ a.episode-title:hover { color: var(--accent); }
   padding: 0.4rem 0.6rem;
   font-size: 0.8rem;
   font-family: inherit;
-  resize: vertical;
+  resize: none;
+  overflow: hidden;
   width: 100%;
 }
 
