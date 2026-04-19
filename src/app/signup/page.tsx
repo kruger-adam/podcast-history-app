@@ -75,9 +75,29 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="auth-container">
-      <h1>Create account</h1>
-      <form onSubmit={handleSubmit} className="auth-form">
+    <div className="signup-layout">
+      <div className="signup-explainer">
+        <h1>Share your podcast listening history</h1>
+        <p className="subtitle">Connect Pocket Casts and get a public page that shows what you&apos;ve been listening to.</p>
+
+        <ol className="signup-steps">
+          <li>Create your free account</li>
+          <li>Enter your Pocket Casts credentials</li>
+          <li>Sync your listening history</li>
+          <li>Share your page at <span className="accent-text">/u/yourname</span></li>
+        </ol>
+
+        <div className="signup-features">
+          <div className="signup-feature">Auto-syncs your history daily</div>
+          <div className="signup-feature">Manual sync whenever you want</div>
+          <div className="signup-feature">Add notes to episodes — why you listened, key takeaways</div>
+          <div className="signup-feature">Free</div>
+        </div>
+      </div>
+
+      <div className="auth-container signup-form-col">
+        <h2>Create account</h2>
+        <form onSubmit={handleSubmit} className="auth-form">
         <label>
           Username
           <input
@@ -108,9 +128,10 @@ export default function SignupPage() {
           {loading ? "Creating account..." : "Create account"}
         </button>
       </form>
-      <p className="auth-footer">
-        Already have an account? <Link href="/login">Sign in</Link>
-      </p>
+        <p className="auth-footer">
+          Already have an account? <Link href="/login">Sign in</Link>
+        </p>
+      </div>
     </div>
   );
 }
