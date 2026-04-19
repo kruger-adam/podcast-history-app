@@ -228,6 +228,11 @@ export default async function ProfilePage({ params }: Props) {
       <div className="footer">
         Last synced: {formatDate(syncState?.last_synced ?? null)}<br />
         Powered by Pocket Casts
+        <div style={{ marginTop: "1rem" }}>
+          <a href="/signup" style={{ color: "var(--text-dim)", textDecoration: "underline" }}>
+            Create your own listening history page →
+          </a>
+        </div>
       </div>
     </div>
   );
