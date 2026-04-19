@@ -246,6 +246,20 @@ details > summary::-webkit-details-marker { display: none; }
 }
 
 /* Footer */
+.profile-cta-banner {
+  background: var(--border);
+  border-radius: 8px;
+  padding: 0.65rem 1rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.profile-cta-banner a {
+  font-weight: 600;
+  text-decoration: underline;
+}
+
 .footer {
   margin-top: 3rem;
   padding-top: 1.5rem;

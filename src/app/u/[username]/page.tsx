@@ -123,6 +123,10 @@ export default async function ProfilePage({ params }: Props) {
 
   return (
     <div className="container">
+      <div className="profile-cta-banner">
+        Automatically sync and share your Pocket Casts listening history —{" "}
+        <a href="/signup">create your page</a>
+      </div>
       <h1>{displayName}&apos;s Podcast History</h1>
       <p className="subtitle">What they&apos;ve been listening to lately</p>
 
