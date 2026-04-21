@@ -3,33 +3,10 @@ export const dynamic = "force-dynamic";
 import { createServiceClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import type { Episode, Note, SyncState } from "@/lib/types";
+import LocalDate from "@/components/LocalDate";
 
 interface Props {
   params: Promise<{ username: string }>;
-}
-
-function formatDate(iso: string | null): string {
-  if (!iso) return "";
-  try {
-    return new Date(iso).toLocaleString("en-US", {
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-    });
-  } catch {
-    return iso;
-  }
-}
-
-function formatDateShort(iso: string | null): string {
-  if (!iso) return "";
-  try {
-    return new Date(iso).toLocaleString("en-US", { month: "short", year: "numeric" });
-  } catch {
-    return "";
-  }
 }
 
 function formatDuration(seconds: number): string {
@@ -159,16 +136,19 @@ export default async function ProfilePage({ params }: Props) {
               {podcastStats.map(([name, ps]) => {
                 const pct = (ps.time / maxTime) * 100;
                 const artworkUrl = `https://static.pocketcasts.com/discover/images/webp/200/${ps.podcast_uuid}.webp`;
-                const dateFrom = formatDateShort(ps.first);
-                const dateTo = formatDateShort(ps.last);
-                const dateRange = dateFrom === dateTo ? dateTo : dateFrom && dateTo ? `${dateFrom} – ${dateTo}` : dateTo;
+                const sameMonth =
+                  ps.first.slice(0, 7) === ps.last.slice(0, 7);
                 return (
                   <div key={name} className="podcast-row">
                     <img className="podcast-row-art" src={artworkUrl} alt={name} loading="lazy" />
                     <div className="podcast-row-info">
                       <div className="podcast-row-name">{name}</div>
                       <div className="podcast-row-meta">
-                        {ps.episodes} ep · {formatDuration(ps.time)}{dateRange ? ` · ${dateRange}` : ""}
+                        {ps.episodes} ep · {formatDuration(ps.time)} ·{" "}
+                      {sameMonth
+                        ? <LocalDate iso={ps.last} format="short" />
+                        : <><LocalDate iso={ps.first} format="short" /> – <LocalDate iso={ps.last} format="short" /></>
+                      }
                       </div>
                       <div className="podcast-bar-bg">
                         <div className="podcast-bar" style={{ width: `${pct.toFixed(0)}%` }} />
@@ -196,9 +176,7 @@ export default async function ProfilePage({ params }: Props) {
                 : `✓ ${durationMin} min`
               : "";
             const artworkUrl = `https://static.pocketcasts.com/discover/images/webp/200/${ep.podcast_uuid}.webp`;
-            const published = ep.published_at
-              ? new Date(ep.published_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
-              : "";
+
 
             return (
               <div key={ep.episode_uuid} className="episode">
@@ -214,7 +192,7 @@ export default async function ProfilePage({ params }: Props) {
                     {ep.title}
                   </a>
                   <div className="episode-meta">
-                    {published && <span>{published}</span>}
+                    {ep.published_at && <span><LocalDate iso={ep.published_at} format="date" /></span>}
                     {durationStr && <span>{durationStr}</span>}
                   </div>
                   {note && (note.reason || note.takeaways) && (
@@ -228,7 +206,7 @@ export default async function ProfilePage({ params }: Props) {
       ))}
 
       <div className="footer">
-        Last synced: {formatDate(syncState?.last_synced ?? null)}<br />
+        Last synced: <LocalDate iso={syncState?.last_synced ?? null} /><br />
         Powered by Pocket Casts
         <div style={{ marginTop: "1rem" }}>
           <a href="/signup" style={{ color: "var(--text-dim)", textDecoration: "underline" }}>
