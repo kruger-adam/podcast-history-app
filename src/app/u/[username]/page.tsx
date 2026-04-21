@@ -17,15 +17,55 @@ function formatDuration(seconds: number): string {
   return `${(mins / (24 * 60)).toFixed(1)} days`;
 }
 
-function groupByMonth(episodes: Episode[]): Map<string, Episode[]> {
-  const groups = new Map<string, Episode[]>();
+const COLLAPSED_PODCAST_UUIDS = new Set([
+  "50cf73a0-6e7f-0137-f267-1d245fc5f9cf", // Harry Potter and the Methods of Rationality Audiobook
+]);
+
+interface CollapsedPodcast {
+  podcast_uuid: string;
+  podcast_title: string;
+  episode_count: number;
+  total_listened: number;
+  latest_listened_date: string;
+}
+
+function buildCollapsedPodcasts(episodes: Episode[]): CollapsedPodcast[] {
+  const map = new Map<string, CollapsedPodcast>();
   for (const ep of episodes) {
-    const key = new Date(ep.listened_date).toLocaleString("en-US", {
+    if (!COLLAPSED_PODCAST_UUIDS.has(ep.podcast_uuid)) continue;
+    const existing = map.get(ep.podcast_uuid);
+    if (existing) {
+      existing.episode_count++;
+      existing.total_listened += ep.played_up_to || 0;
+      if (ep.listened_date > existing.latest_listened_date) {
+        existing.latest_listened_date = ep.listened_date;
+      }
+    } else {
+      map.set(ep.podcast_uuid, {
+        podcast_uuid: ep.podcast_uuid,
+        podcast_title: ep.podcast_title,
+        episode_count: 1,
+        total_listened: ep.played_up_to || 0,
+        latest_listened_date: ep.listened_date,
+      });
+    }
+  }
+  return Array.from(map.values());
+}
+
+type FeedItem =
+  | { kind: "episode"; data: Episode; sortDate: string }
+  | { kind: "collapsed"; data: CollapsedPodcast; sortDate: string };
+
+function groupByMonth(items: FeedItem[]): Map<string, FeedItem[]> {
+  const groups = new Map<string, FeedItem[]>();
+  for (const item of items) {
+    const key = new Date(item.sortDate).toLocaleString("en-US", {
       month: "long",
       year: "numeric",
     });
     if (!groups.has(key)) groups.set(key, []);
-    groups.get(key)!.push(ep);
+    groups.get(key)!.push(item);
   }
   return groups;
 }
@@ -90,7 +130,16 @@ export default async function ProfilePage({ params }: Props) {
       ? ((syncState.time_listened + syncState.time_variable_speed) / syncState.time_listened).toFixed(1)
       : null;
 
-  const monthGroups = groupByMonth(episodes);
+  const collapsedPodcasts = buildCollapsedPodcasts(episodes);
+  const collapsedUuids = new Set(collapsedPodcasts.map((p) => p.podcast_uuid));
+  const normalEpisodes = episodes.filter((ep) => !collapsedUuids.has(ep.podcast_uuid));
+
+  const feedItems: FeedItem[] = [
+    ...normalEpisodes.map((ep) => ({ kind: "episode" as const, data: ep, sortDate: ep.listened_date })),
+    ...collapsedPodcasts.map((p) => ({ kind: "collapsed" as const, data: p, sortDate: p.latest_listened_date })),
+  ].sort((a, b) => b.sortDate.localeCompare(a.sortDate));
+
+  const monthGroups = groupByMonth(feedItems);
   const podcastStats = getPodcastStats(episodes);
   const maxTime = podcastStats[0]?.[1].time || 1;
 
@@ -162,10 +211,31 @@ export default async function ProfilePage({ params }: Props) {
         </div>
       )}
 
-      {Array.from(monthGroups.entries()).map(([month, eps]) => (
+      {Array.from(monthGroups.entries()).map(([month, items]) => (
         <div key={month}>
           <h2 className="month-header">{month}</h2>
-          {eps.map((ep) => {
+          {items.map((item) => {
+            if (item.kind === "collapsed") {
+              const p = item.data;
+              const note = notesMap.get(p.podcast_uuid);
+              const artworkUrl = `https://static.pocketcasts.com/discover/images/webp/200/${p.podcast_uuid}.webp`;
+              return (
+                <div key={p.podcast_uuid} className="episode">
+                  <img className="episode-art" src={artworkUrl} alt={p.podcast_title} loading="lazy" />
+                  <div className="episode-info">
+                    <div className="episode-podcast">{p.podcast_title}</div>
+                    <div className="episode-meta">
+                      <span>{p.episode_count} episodes · {formatDuration(p.total_listened)} listened</span>
+                    </div>
+                    {note && (note.reason || note.takeaways) && (
+                      <NoteDisplay reason={note.reason} takeaways={note.takeaways} />
+                    )}
+                  </div>
+                </div>
+              );
+            }
+
+            const ep = item.data;
             const note = notesMap.get(ep.episode_uuid);
             const played = ep.played_up_to || ep.duration;
             const durationMin = Math.floor(ep.duration / 60);
@@ -176,7 +246,6 @@ export default async function ProfilePage({ params }: Props) {
                 : `✓ ${durationMin} min`
               : "";
             const artworkUrl = `https://static.pocketcasts.com/discover/images/webp/200/${ep.podcast_uuid}.webp`;
-
 
             return (
               <div key={ep.episode_uuid} className="episode">

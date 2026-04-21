@@ -133,6 +133,7 @@ export default async function DashboardPage() {
             if (item.kind === "collapsed") {
               const p = item.data;
               const artworkUrl = `https://static.pocketcasts.com/discover/images/webp/200/${p.podcast_uuid}.webp`;
+              const note = notesMap.get(p.podcast_uuid);
               return (
                 <div key={p.podcast_uuid} className="episode dashboard-episode">
                   <img className="episode-art" src={artworkUrl} alt={p.podcast_title} loading="lazy" />
@@ -142,6 +143,11 @@ export default async function DashboardPage() {
                       <span><LocalDate iso={p.latest_listened_date} /></span>
                       <span>{p.episode_count} episodes · {formatDuration(p.total_listened)} listened</span>
                     </div>
+                    <NoteEditor
+                      episodeUuid={p.podcast_uuid}
+                      initialReason={note?.reason}
+                      initialTakeaways={note?.takeaways}
+                    />
                   </div>
                 </div>
               );
