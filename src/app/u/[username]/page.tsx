@@ -17,8 +17,7 @@ function formatDate(iso: string | null): string {
       year: "numeric",
       hour: "numeric",
       minute: "2-digit",
-      timeZone: "UTC",
-    }) + " UTC";
+    });
   } catch {
     return iso;
   }
@@ -27,7 +26,7 @@ function formatDate(iso: string | null): string {
 function formatDateShort(iso: string | null): string {
   if (!iso) return "";
   try {
-    return new Date(iso).toLocaleString("en-US", { month: "short", year: "numeric", timeZone: "UTC" });
+    return new Date(iso).toLocaleString("en-US", { month: "short", year: "numeric" });
   } catch {
     return "";
   }
@@ -47,7 +46,6 @@ function groupByMonth(episodes: Episode[]): Map<string, Episode[]> {
     const key = new Date(ep.listened_date).toLocaleString("en-US", {
       month: "long",
       year: "numeric",
-      timeZone: "UTC",
     });
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key)!.push(ep);
@@ -199,7 +197,7 @@ export default async function ProfilePage({ params }: Props) {
               : "";
             const artworkUrl = `https://static.pocketcasts.com/discover/images/webp/200/${ep.podcast_uuid}.webp`;
             const published = ep.published_at
-              ? new Date(ep.published_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" })
+              ? new Date(ep.published_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
               : "";
 
             return (
