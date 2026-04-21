@@ -5,17 +5,7 @@ import SyncButton from "@/components/SyncButton";
 import NoteEditor from "@/components/NoteEditor";
 import Link from "next/link";
 import type { Episode, Note, SyncState } from "@/lib/types";
-
-function formatDate(iso: string | null) {
-  if (!iso) return "Never";
-  return new Date(iso).toLocaleString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
-}
+import LocalDate from "@/components/LocalDate";
 
 function formatDuration(seconds: number): string {
   const mins = Math.floor(seconds / 60);
@@ -79,7 +69,7 @@ export default async function DashboardPage() {
 
       <div className="sync-status">
         <p className="text-dim">
-          Last synced: <strong>{formatDate(syncState?.last_synced ?? null)}</strong>
+          Last synced: <strong><LocalDate iso={syncState?.last_synced ?? null} fallback="Never" /></strong>
           {" · "}
           {episodes.length} episodes
         </p>
@@ -115,7 +105,7 @@ export default async function DashboardPage() {
                     {ep.title}
                   </div>
                   <div className="episode-meta">
-                    <span>{formatDate(ep.listened_date)}</span>
+                    <span><LocalDate iso={ep.listened_date} /></span>
                     {durationStr && <span>{durationStr}</span>}
                   </div>
                   <NoteEditor
