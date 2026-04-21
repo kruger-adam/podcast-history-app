@@ -1,6 +1,6 @@
 import { createServerClient, createServiceClient } from "@/lib/supabase/server";
 import { decrypt } from "@/lib/crypto";
-import { login, fetchEpisodes, fetchStats } from "@/lib/pocketcasts";
+import { login, fetchEpisodes, fetchFiles, fetchStats } from "@/lib/pocketcasts";
 import { NextResponse } from "next/server";
 
 function isCronRequest(request: Request): boolean {
@@ -77,11 +77,15 @@ export async function POST(request: Request) {
   try {
     const token = await login(email, password);
 
-    // Fetch episodes and stats in parallel
-    const [episodes, stats] = await Promise.all([
+    // Fetch episodes, files, and stats in parallel
+    const [episodes, files, stats] = await Promise.all([
       fetchEpisodes(token),
+      fetchFiles(token),
       fetchStats(token),
     ]);
+
+    // Merge files into episodes — files use their uuid as the key, no conflict with podcast episode uuids
+    const allEpisodes = [...episodes, ...files];
 
     const now = new Date().toISOString();
 
@@ -98,7 +102,7 @@ export async function POST(request: Request) {
     const toInsert: object[] = [];
     const toUpdate: { episode_uuid: string; played_up_to: number; duration: number; listened_date: string }[] = [];
 
-    for (const ep of episodes) {
+    for (const ep of allEpisodes) {
       if (!ep.uuid) continue;
       const existing = existingMap.get(ep.uuid);
       if (existing) {

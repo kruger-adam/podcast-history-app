@@ -1,4 +1,4 @@
-import type { PocketCastsEpisode, PocketCastsStats } from "./types";
+import type { PocketCastsEpisode, PocketCastsFile, PocketCastsStats } from "./types";
 
 const API_BASE = "https://api.pocketcasts.com";
 
@@ -69,6 +69,36 @@ export async function fetchEpisodes(
   });
 
   return Array.from(byUuid.values());
+}
+
+export async function fetchFiles(token: string): Promise<PocketCastsEpisode[]> {
+  const resp = await fetch(`${API_BASE}/files`, {
+    method: "GET",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!resp.ok) {
+    console.warn(`Pocket Casts /files failed: ${resp.status}`);
+    return [];
+  }
+  const data = await resp.json();
+  const files = (data.files || []) as PocketCastsFile[];
+  const now = Date.now();
+
+  return files
+    .filter((f) => f.playingStatus >= 2 || f.playedUpTo > 0)
+    .map((f) => ({
+      uuid: f.uuid,
+      title: f.title || "Untitled File",
+      podcastUuid: "",
+      podcastTitle: "Files",
+      published: f.published || new Date(now).toISOString(),
+      duration: f.duration || 0,
+      playedUpTo: f.playedUpTo || 0,
+      url: "",
+      listenedDate: f.playedUpToModified
+        ? new Date(f.playedUpToModified).toISOString()
+        : new Date(now).toISOString(),
+    }));
 }
 
 export async function fetchStats(

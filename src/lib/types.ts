@@ -47,6 +47,16 @@ export interface PocketCastsEpisode {
   listenedDate?: string;
 }
 
+export interface PocketCastsFile {
+  uuid: string;
+  title: string;
+  duration: number;
+  playedUpTo: number;
+  playingStatus: number; // 0=unplayed, 2=in-progress, 3=played
+  playedUpToModified?: number; // Unix timestamp ms — last play time
+  published?: string;
+}
+
 export interface PocketCastsStats {
   timeListened: number;
   timeVariableSpeed: number;
