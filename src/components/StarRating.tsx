@@ -14,6 +14,7 @@ export default function StarRating({ episodeUuid, initialRating }: StarRatingPro
 
   async function save(value: number) {
     const next = value === rating ? 0 : value;
+    setRating(next);
     setSaving(true);
     try {
       await fetch("/api/ratings", {
@@ -21,7 +22,6 @@ export default function StarRating({ episodeUuid, initialRating }: StarRatingPro
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ episode_uuid: episodeUuid, rating: next }),
       });
-      setRating(next);
     } finally {
       setSaving(false);
     }
