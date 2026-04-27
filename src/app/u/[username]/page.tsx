@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { createServiceClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
-import type { Episode, Note, SyncState } from "@/lib/types";
+import type { Episode, Note, Rating, SyncState } from "@/lib/types";
 import LocalDate from "@/components/LocalDate";
 
 interface Props {
@@ -98,7 +98,7 @@ export default async function ProfilePage({ params }: Props) {
 
   if (!profile) notFound();
 
-  const [episodesResult, notesResult, syncStateResult] = await Promise.all([
+  const [episodesResult, notesResult, ratingsResult, syncStateResult] = await Promise.all([
     service
       .from("episodes")
       .select("*")
@@ -106,12 +106,16 @@ export default async function ProfilePage({ params }: Props) {
       .or("played_up_to.gte.60,duration.gte.60")
       .order("listened_date", { ascending: false }),
     service.from("notes").select("*").eq("user_id", profile.id),
+    service.from("ratings").select("*").eq("user_id", profile.id),
     service.from("sync_state").select("*").eq("user_id", profile.id).maybeSingle(),
   ]);
 
   const episodes = (episodesResult.data || []) as Episode[];
   const notesMap = new Map<string, Note>(
     ((notesResult.data || []) as Note[]).map((n) => [n.episode_uuid, n])
+  );
+  const ratingsMap = new Map<string, Rating>(
+    ((ratingsResult.data || []) as Rating[]).map((r) => [r.episode_uuid, r])
   );
   const syncState = syncStateResult.data as SyncState | null;
 
@@ -237,6 +241,7 @@ export default async function ProfilePage({ params }: Props) {
 
             const ep = item.data;
             const note = notesMap.get(ep.episode_uuid);
+            const ratingEntry = ratingsMap.get(ep.episode_uuid);
             const played = ep.played_up_to || ep.duration;
             const durationMin = Math.floor(ep.duration / 60);
             const playedMin = Math.floor(played / 60);
@@ -264,6 +269,13 @@ export default async function ProfilePage({ params }: Props) {
                     {ep.published_at && <span><LocalDate iso={ep.published_at} format="date" /></span>}
                     {durationStr && <span>{durationStr}</span>}
                   </div>
+                  {ratingEntry && (
+                    <div className="episode-rating" aria-label={`Rated ${ratingEntry.rating} of 5`}>
+                      {[1, 2, 3, 4, 5].map((n) => (
+                        <span key={n} className={n <= ratingEntry.rating ? "star-on" : "star-off"}>★</span>
+                      ))}
+                    </div>
+                  )}
                   {note && (note.reason || note.takeaways) && (
                     <NoteDisplay reason={note.reason} takeaways={note.takeaways} />
                   )}

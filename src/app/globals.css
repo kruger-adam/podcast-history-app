@@ -192,6 +192,37 @@ a.episode-title:hover { color: var(--accent); }
 
 .note-saved { color: var(--accent); }
 
+/* Star ratings */
+.star-rating {
+  display: flex;
+  gap: 0.1rem;
+  margin-top: 0.4rem;
+}
+
+.star-rating .star {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 1rem;
+  cursor: pointer;
+  line-height: 1;
+  font-family: inherit;
+}
+
+.star-rating .star:disabled { cursor: default; }
+
+.star-on { color: var(--accent); }
+.star-off { color: var(--border); }
+
+.star-rating .star:not(:disabled):hover { transform: scale(1.15); }
+
+.episode-rating {
+  display: flex;
+  gap: 0.1rem;
+  margin-top: 0.25rem;
+  font-size: 0.9rem;
+}
+
 /* Podcast stats */
 .podcast-stats { margin-bottom: 2rem; }
 

@@ -3,8 +3,9 @@ export const dynamic = "force-dynamic";
 import { createServerClient, createServiceClient } from "@/lib/supabase/server";
 import SyncButton from "@/components/SyncButton";
 import NoteEditor from "@/components/NoteEditor";
+import StarRating from "@/components/StarRating";
 import Link from "next/link";
-import type { Episode, Note, SyncState } from "@/lib/types";
+import type { Episode, Note, Rating, SyncState } from "@/lib/types";
 import LocalDate from "@/components/LocalDate";
 
 function formatDuration(seconds: number): string {
@@ -58,7 +59,7 @@ export default async function DashboardPage() {
 
   const service = createServiceClient();
 
-  const [profileResult, syncStateResult, episodesResult, notesResult, credsResult] =
+  const [profileResult, syncStateResult, episodesResult, notesResult, ratingsResult, credsResult] =
     await Promise.all([
       supabase.from("profiles").select("username, display_name").eq("id", user!.id).single(),
       service.from("sync_state").select("*").eq("user_id", user!.id).maybeSingle(),
@@ -68,6 +69,7 @@ export default async function DashboardPage() {
         .eq("user_id", user!.id)
         .order("listened_date", { ascending: false }),
       service.from("notes").select("*").eq("user_id", user!.id),
+      service.from("ratings").select("*").eq("user_id", user!.id),
       service.from("credentials").select("user_id").eq("user_id", user!.id).maybeSingle(),
     ]);
 
@@ -76,6 +78,9 @@ export default async function DashboardPage() {
   const episodes = (episodesResult.data || []) as Episode[];
   const notesMap = new Map<string, Note>(
     ((notesResult.data || []) as Note[]).map((n) => [n.episode_uuid, n])
+  );
+  const ratingsMap = new Map<string, Rating>(
+    ((ratingsResult.data || []) as Rating[]).map((r) => [r.episode_uuid, r])
   );
   const hasCreds = !!credsResult.data;
 
@@ -155,6 +160,7 @@ export default async function DashboardPage() {
 
             const ep = item.data;
             const note = notesMap.get(ep.episode_uuid);
+            const ratingEntry = ratingsMap.get(ep.episode_uuid);
             const played = ep.played_up_to || ep.duration;
             const durationMin = Math.floor(ep.duration / 60);
             const playedMin = Math.floor(played / 60);
@@ -177,6 +183,10 @@ export default async function DashboardPage() {
                     <span><LocalDate iso={ep.listened_date} /></span>
                     {durationStr && <span>{durationStr}</span>}
                   </div>
+                  <StarRating
+                    episodeUuid={ep.episode_uuid}
+                    initialRating={ratingEntry?.rating}
+                  />
                   <NoteEditor
                     episodeUuid={ep.episode_uuid}
                     initialReason={note?.reason}

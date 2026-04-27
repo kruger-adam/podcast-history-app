@@ -27,6 +27,13 @@ export interface Note {
   updated_at: string;
 }
 
+export interface Rating {
+  user_id: string;
+  episode_uuid: string;
+  rating: number;
+  updated_at: string;
+}
+
 export interface SyncState {
   user_id: string;
   last_synced: string | null;
