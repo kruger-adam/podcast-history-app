@@ -578,6 +578,8 @@ details > summary::-webkit-details-marker { display: none; }
   .stats { gap: 1rem; flex-wrap: wrap; }
   h1 { font-size: 1.4rem; }
   .sync-status { flex-direction: column; align-items: flex-start; }
+  .star-rating .star { padding: 0.5rem 0.3rem; font-size: 1.25rem; }
+  .note-editor textarea { font-size: 1rem; }
 }
 
 /* Password input with show/hide toggle */
