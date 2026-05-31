@@ -8,6 +8,8 @@ interface NoteEditorProps {
   initialTakeaways?: string | null;
 }
 
+const POLISH_ENABLED = false;
+
 export default function NoteEditor({
   episodeUuid,
   initialReason,
@@ -86,7 +88,7 @@ export default function NoteEditor({
           placeholder="Why did you listen to this?"
           rows={2}
         />
-        {reason.trim() && (
+        {POLISH_ENABLED && reason.trim() && (
           <button
             className="note-polish-btn"
             onClick={() => polish("reason")}
@@ -107,7 +109,7 @@ export default function NoteEditor({
           placeholder="What did you take away?"
           rows={2}
         />
-        {takeaways.trim() && (
+        {POLISH_ENABLED && takeaways.trim() && (
           <button
             className="note-polish-btn"
             onClick={() => polish("takeaways")}
