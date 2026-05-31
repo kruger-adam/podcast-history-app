@@ -17,6 +17,8 @@ export default function NoteEditor({
   const [takeaways, setTakeaways] = useState(initialTakeaways || "");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [polishingReason, setPolishingReason] = useState(false);
+  const [polishingTakeaways, setPolishingTakeaways] = useState(false);
   const reasonRef = useRef<HTMLTextAreaElement>(null);
   const takeawaysRef = useRef<HTMLTextAreaElement>(null);
 
@@ -50,9 +52,31 @@ export default function NoteEditor({
     }
   }
 
+  async function polish(field: "reason" | "takeaways") {
+    const text = field === "reason" ? reason : takeaways;
+    const setPolishing =
+      field === "reason" ? setPolishingReason : setPolishingTakeaways;
+    const setText = field === "reason" ? setReason : setTakeaways;
+
+    setPolishing(true);
+    try {
+      const res = await fetch("/api/ai/polish", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, field }),
+      });
+      if (res.ok) {
+        const { polished } = await res.json();
+        setText(polished);
+      }
+    } finally {
+      setPolishing(false);
+    }
+  }
+
   return (
     <div className="note-editor">
-      <label>
+      <div className="note-field">
         <span className="note-label">Why I listened</span>
         <textarea
           ref={reasonRef}
@@ -62,8 +86,18 @@ export default function NoteEditor({
           placeholder="Why did you listen to this?"
           rows={2}
         />
-      </label>
-      <label>
+        {reason.trim() && (
+          <button
+            className="note-polish-btn"
+            onClick={() => polish("reason")}
+            disabled={polishingReason}
+            type="button"
+          >
+            {polishingReason ? "Polishing..." : "Polish"}
+          </button>
+        )}
+      </div>
+      <div className="note-field">
         <span className="note-label">Takeaways</span>
         <textarea
           ref={takeawaysRef}
@@ -73,7 +107,17 @@ export default function NoteEditor({
           placeholder="What did you take away?"
           rows={2}
         />
-      </label>
+        {takeaways.trim() && (
+          <button
+            className="note-polish-btn"
+            onClick={() => polish("takeaways")}
+            disabled={polishingTakeaways}
+            type="button"
+          >
+            {polishingTakeaways ? "Polishing..." : "Polish"}
+          </button>
+        )}
+      </div>
       {saving && <span className="note-saving">Saving...</span>}
       {saved && <span className="note-saved">Saved</span>}
     </div>

@@ -160,7 +160,7 @@ a.episode-title:hover { color: var(--accent); }
   gap: 0.4rem;
 }
 
-.note-editor label {
+.note-editor .note-field {
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
@@ -191,6 +191,28 @@ a.episode-title:hover { color: var(--accent); }
 }
 
 .note-saved { color: var(--accent); }
+
+.note-polish-btn {
+  align-self: flex-start;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.7rem;
+  padding: 0.15rem 0.4rem;
+}
+
+.note-polish-btn:hover:not(:disabled) {
+  border-color: var(--accent-dim);
+  color: var(--accent);
+}
+
+.note-polish-btn:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
 
 /* Star ratings */
 .star-rating {
