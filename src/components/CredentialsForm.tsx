@@ -25,6 +25,9 @@ export default function CredentialsForm({ hasExisting }: { hasExisting: boolean 
       setError(data.error || "Failed to save credentials");
       setLoading(false);
     } else {
+      if (!hasExisting) {
+        fetch("/api/sync", { method: "POST" });
+      }
       router.push("/dashboard");
     }
   }
