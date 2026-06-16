@@ -7,6 +7,7 @@ import StarRating from "@/components/StarRating";
 import Link from "next/link";
 import type { Episode, Note, Rating, SyncState } from "@/lib/types";
 import LocalDate from "@/components/LocalDate";
+import SignOutButton from "@/components/SignOutButton";
 
 function formatDuration(seconds: number): string {
   const mins = Math.floor(seconds / 60);
@@ -109,6 +110,7 @@ export default async function DashboardPage() {
             <Link href="/dashboard/credentials" className="settings-link">
               {hasCreds ? "Update Pocket Casts credentials" : "Connect Pocket Casts"}
             </Link>
+            <SignOutButton />
           </div>
         )}
       </div>

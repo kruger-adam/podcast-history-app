@@ -415,6 +415,19 @@ details > summary::-webkit-details-marker { display: none; }
   text-decoration: underline;
 }
 
+.sign-out-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.sign-out-btn:hover {
+  color: var(--text);
+}
+
 .sync-status {
   display: flex;
   align-items: center;
