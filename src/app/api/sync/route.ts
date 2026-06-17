@@ -75,14 +75,28 @@ export async function POST(request: Request) {
   );
 
   try {
-    const token = await login(email, password);
+    let token: string;
+    try {
+      token = await login(email, password);
+    } catch (err) {
+      console.error(`[sync] Pocket Casts login failed for user ${userId}:`, err);
+      throw err;
+    }
 
     // Fetch episodes, files, and stats in parallel
-    const [episodes, files, stats] = await Promise.all([
-      fetchEpisodes(token),
-      fetchFiles(token),
-      fetchStats(token),
-    ]);
+    let episodes: Awaited<ReturnType<typeof fetchEpisodes>>;
+    let files: Awaited<ReturnType<typeof fetchFiles>>;
+    let stats: Awaited<ReturnType<typeof fetchStats>>;
+    try {
+      [episodes, files, stats] = await Promise.all([
+        fetchEpisodes(token),
+        fetchFiles(token),
+        fetchStats(token),
+      ]);
+    } catch (err) {
+      console.error(`[sync] Pocket Casts fetch failed for user ${userId}:`, err);
+      throw err;
+    }
 
     // Merge files into episodes — files use their uuid as the key, no conflict with podcast episode uuids
     const allEpisodes = [...episodes, ...files];
@@ -136,7 +150,11 @@ export async function POST(request: Request) {
 
     // Insert new episodes
     if (toInsert.length > 0) {
-      await service.from("episodes").insert(toInsert);
+      const { error: insertError } = await service.from("episodes").insert(toInsert);
+      if (insertError) {
+        console.error(`[sync] Episode insert failed for user ${userId}:`, insertError);
+        throw insertError;
+      }
     }
 
     // Update changed episodes one by one (no bulk update on non-PK columns in supabase)
@@ -166,6 +184,7 @@ export async function POST(request: Request) {
       updated_count: toUpdate.length,
     });
   } catch (err) {
+    console.error(`[sync] Sync failed for user ${userId}:`, err);
     await service.from("sync_state").upsert(
       { user_id: userId, syncing: false },
       { onConflict: "user_id" }
