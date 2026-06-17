@@ -9,6 +9,7 @@ export default function CredentialsForm({ hasExisting }: { hasExisting: boolean 
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const router = useRouter();
 
   async function handleSubmit(e: React.FormEvent) {
@@ -26,7 +27,8 @@ export default function CredentialsForm({ hasExisting }: { hasExisting: boolean 
       setLoading(false);
     } else {
       if (!hasExisting) {
-        fetch("/api/sync", { method: "POST" });
+        setSyncing(true);
+        await fetch("/api/sync", { method: "POST" });
       }
       router.push("/dashboard");
     }
@@ -53,7 +55,7 @@ export default function CredentialsForm({ hasExisting }: { hasExisting: boolean 
       </label>
       {error && <p className="auth-error">{error}</p>}
       <button type="submit" disabled={loading} className="btn-primary">
-        {loading ? "Verifying..." : hasExisting ? "Update credentials" : "Connect Pocket Casts"}
+        {syncing ? "Syncing your history..." : loading ? "Verifying..." : hasExisting ? "Update credentials" : "Connect Pocket Casts"}
       </button>
     </form>
   );
