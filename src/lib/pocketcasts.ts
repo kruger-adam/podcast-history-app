@@ -2,6 +2,12 @@ import type { PocketCastsEpisode, PocketCastsFile, PocketCastsStats } from "./ty
 
 const API_BASE = "https://api.pocketcasts.com";
 
+function safeIso(value: unknown, fallback: string): string {
+  if (!value) return fallback;
+  const d = new Date(value as string | number);
+  return isNaN(d.getTime()) ? fallback : d.toISOString();
+}
+
 export async function login(
   email: string,
   password: string
@@ -91,13 +97,11 @@ export async function fetchFiles(token: string): Promise<PocketCastsEpisode[]> {
       title: f.title || "Untitled File",
       podcastUuid: "",
       podcastTitle: "Files",
-      published: f.published || new Date(now).toISOString(),
+      published: safeIso(f.published, new Date(now).toISOString()),
       duration: f.duration || 0,
       playedUpTo: f.playedUpTo || 0,
       url: "",
-      listenedDate: f.playedUpToModified
-        ? new Date(f.playedUpToModified).toISOString()
-        : new Date(now).toISOString(),
+      listenedDate: safeIso(f.playedUpToModified, new Date(now).toISOString()),
     }));
 }
 

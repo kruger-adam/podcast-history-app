@@ -11,6 +11,7 @@ export default function LocalDate({
 }) {
   if (!iso) return <>{fallback}</>;
   const d = new Date(iso);
+  if (isNaN(d.getTime())) return <>{fallback}</>;
   if (format === "short") {
     return <>{d.toLocaleString("en-US", { month: "short", year: "numeric" })}</>;
   }
