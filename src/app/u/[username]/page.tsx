@@ -86,6 +86,25 @@ function getPodcastStats(episodes: Episode[]) {
   return Array.from(stats.entries()).sort((a, b) => b[1].time - a[1].time);
 }
 
+function getEpisodesByPodcast(episodes: Episode[]): Map<string, Episode[]> {
+  const map = new Map<string, Episode[]>();
+  for (const ep of episodes) {
+    const name = ep.podcast_title || "Unknown";
+    if (!map.has(name)) map.set(name, []);
+    map.get(name)!.push(ep);
+  }
+  for (const list of map.values()) {
+    list.sort((a, b) => b.listened_date.localeCompare(a.listened_date));
+  }
+  return map;
+}
+
+function formatMinutes(mins: number): string {
+  if (mins < 120) return `${Math.round(mins).toLocaleString()} min`;
+  if (mins < 2 * 24 * 60) return `${(mins / 60).toFixed(1)} hrs`;
+  return `${(mins / (24 * 60)).toFixed(1)} days`;
+}
+
 export default async function ProfilePage({ params }: Props) {
   const { username } = await params;
   const service = createServiceClient();
@@ -123,16 +142,18 @@ export default async function ProfilePage({ params }: Props) {
     episodes.reduce((sum, ep) => sum + (ep.played_up_to || ep.duration), 0) / 60
   );
   const podcastSet = new Set(episodes.map((ep) => ep.podcast_title));
-  const timeStr = totalMinutes < 120
-    ? `${totalMinutes.toLocaleString()} min`
-    : totalMinutes < 2 * 24 * 60
-    ? `${(totalMinutes / 60).toFixed(1)} hrs`
-    : `${(totalMinutes / (24 * 60)).toFixed(1)} days`;
+  const timeStr = formatMinutes(totalMinutes);
 
-  const avgSpeed =
+  // Pocket Casts' account-wide stats give us actual wall-clock listening
+  // time separately from playback-speed-adjusted time. We use the ratio
+  // between them to estimate real time spent from the content-duration
+  // total above (`timeStr`), which is measured as if played at 1x.
+  const avgSpeedNum =
     syncState && syncState.time_listened > 0
-      ? ((syncState.time_listened + syncState.time_variable_speed) / syncState.time_listened).toFixed(1)
+      ? (syncState.time_listened + syncState.time_variable_speed) / syncState.time_listened
       : null;
+  const avgSpeed = avgSpeedNum ? avgSpeedNum.toFixed(1) : null;
+  const actualTimeStr = avgSpeedNum ? formatMinutes(totalMinutes / avgSpeedNum) : null;
 
   const collapsedPodcasts = buildCollapsedPodcasts(episodes);
   const collapsedUuids = new Set(collapsedPodcasts.map((p) => p.podcast_uuid));
@@ -145,6 +166,7 @@ export default async function ProfilePage({ params }: Props) {
 
   const monthGroups = groupByMonth(feedItems);
   const podcastStats = getPodcastStats(episodes);
+  const episodesByPodcast = getEpisodesByPodcast(episodes);
   const maxTime = podcastStats[0]?.[1].time || 1;
 
   const displayName = profile.display_name || profile.username;
@@ -167,10 +189,22 @@ export default async function ProfilePage({ params }: Props) {
           <span className="stat-num">{podcastSet.size.toLocaleString()}</span>
           podcasts
         </div>
-        <div className="stat">
+        <div
+          className="stat"
+          title="Total episode duration played, counted as if listened at 1x speed — not necessarily how much real time was spent listening."
+        >
           <span className="stat-num">{timeStr}</span>
-          listened
+          of content
         </div>
+        {actualTimeStr && (
+          <div
+            className="stat"
+            title="Estimated real time spent listening, based on average playback speed."
+          >
+            <span className="stat-num">{actualTimeStr}</span>
+            actual time (est.)
+          </div>
+        )}
         {avgSpeed && (
           <div className="stat">
             <span className="stat-num">{avgSpeed}x</span>
@@ -191,23 +225,39 @@ export default async function ProfilePage({ params }: Props) {
                 const artworkUrl = `https://static.pocketcasts.com/discover/images/webp/200/${ps.podcast_uuid}.webp`;
                 const sameMonth =
                   ps.first.slice(0, 7) === ps.last.slice(0, 7);
+                const podcastEpisodes = episodesByPodcast.get(name) || [];
                 return (
-                  <div key={name} className="podcast-row">
-                    <img className="podcast-row-art" src={artworkUrl} alt={name} loading="lazy" />
-                    <div className="podcast-row-info">
-                      <div className="podcast-row-name">{name}</div>
-                      <div className="podcast-row-meta">
-                        {ps.episodes} ep · {formatDuration(ps.time)} ·{" "}
-                      {sameMonth
-                        ? <LocalDate iso={ps.last} format="short" />
-                        : <><LocalDate iso={ps.first} format="short" /> – <LocalDate iso={ps.last} format="short" /></>
-                      }
+                  <details key={name} className="podcast-row-details">
+                    <summary className="podcast-row">
+                      <img className="podcast-row-art" src={artworkUrl} alt={name} loading="lazy" />
+                      <div className="podcast-row-info">
+                        <div className="podcast-row-name">{name}</div>
+                        <div className="podcast-row-meta">
+                          {ps.episodes} ep · {formatDuration(ps.time)} ·{" "}
+                        {sameMonth
+                          ? <LocalDate iso={ps.last} format="short" />
+                          : <><LocalDate iso={ps.first} format="short" /> – <LocalDate iso={ps.last} format="short" /></>
+                        }
+                        </div>
+                        <div className="podcast-bar-bg">
+                          <div className="podcast-bar" style={{ width: `${pct.toFixed(0)}%` }} />
+                        </div>
                       </div>
-                      <div className="podcast-bar-bg">
-                        <div className="podcast-bar" style={{ width: `${pct.toFixed(0)}%` }} />
-                      </div>
+                    </summary>
+                    <div className="podcast-row-episodes">
+                      {podcastEpisodes.map((ep) => {
+                        const played = ep.played_up_to || ep.duration;
+                        return (
+                          <div key={ep.episode_uuid} className="podcast-episode-row">
+                            <span className="podcast-episode-title">{ep.title}</span>
+                            <span className="podcast-episode-meta">
+                              <LocalDate iso={ep.listened_date} format="date" /> · {formatDuration(played)}
+                            </span>
+                          </div>
+                        );
+                      })}
                     </div>
-                  </div>
+                  </details>
                 );
               })}
             </div>
