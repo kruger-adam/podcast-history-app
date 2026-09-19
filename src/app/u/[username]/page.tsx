@@ -4,6 +4,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import type { Episode, Note, Rating, SyncState } from "@/lib/types";
 import LocalDate from "@/components/LocalDate";
+import ShareLink from "@/components/ShareLink";
 
 interface Props {
   params: Promise<{ username: string }>;
@@ -274,7 +275,7 @@ export default async function ProfilePage({ params }: Props) {
               const note = notesMap.get(p.podcast_uuid);
               const artworkUrl = `https://static.pocketcasts.com/discover/images/webp/200/${p.podcast_uuid}.webp`;
               return (
-                <div key={p.podcast_uuid} className="episode">
+                <div key={p.podcast_uuid} id={p.podcast_uuid} className="episode">
                   <img className="episode-art" src={artworkUrl} alt={p.podcast_title} loading="lazy" />
                   <div className="episode-info">
                     <div className="episode-podcast">{p.podcast_title}</div>
@@ -282,7 +283,7 @@ export default async function ProfilePage({ params }: Props) {
                       <span>{p.episode_count} episodes · {formatDuration(p.total_listened)} listened</span>
                     </div>
                     {note && (note.reason || note.takeaways) && (
-                      <NoteDisplay reason={note.reason} takeaways={note.takeaways} />
+                      <NoteDisplay reason={note.reason} takeaways={note.takeaways} slug={p.podcast_uuid} />
                     )}
                   </div>
                 </div>
@@ -303,7 +304,7 @@ export default async function ProfilePage({ params }: Props) {
             const artworkUrl = `https://static.pocketcasts.com/discover/images/webp/200/${ep.podcast_uuid}.webp`;
 
             return (
-              <div key={ep.episode_uuid} className="episode">
+              <div key={ep.episode_uuid} id={ep.episode_uuid} className="episode">
                 <img className="episode-art" src={artworkUrl} alt={ep.podcast_title} loading="lazy" />
                 <div className="episode-info">
                   <div className="episode-podcast">{ep.podcast_title}</div>
@@ -327,7 +328,7 @@ export default async function ProfilePage({ params }: Props) {
                     </div>
                   )}
                   {note && (note.reason || note.takeaways) && (
-                    <NoteDisplay reason={note.reason} takeaways={note.takeaways} />
+                    <NoteDisplay reason={note.reason} takeaways={note.takeaways} slug={ep.episode_uuid} />
                   )}
                 </div>
               </div>
@@ -349,7 +350,15 @@ export default async function ProfilePage({ params }: Props) {
   );
 }
 
-function NoteDisplay({ reason, takeaways }: { reason: string | null; takeaways: string | null }) {
+function NoteDisplay({
+  reason,
+  takeaways,
+  slug,
+}: {
+  reason: string | null;
+  takeaways: string | null;
+  slug: string;
+}) {
   const parts: string[] = [];
   if (reason) parts.push(`<span class="note-label">Why I listened:</span> ${escapeHtml(reason)}`);
   if (takeaways) parts.push(`<span class="note-label">Takeaways:</span> ${escapeHtml(takeaways)}`);
@@ -360,7 +369,10 @@ function NoteDisplay({ reason, takeaways }: { reason: string | null; takeaways: 
 
   if (firstText.length <= previewLimit && !(reason && takeaways)) {
     return (
-      <div className="episode-notes" dangerouslySetInnerHTML={{ __html: fullHtml }} />
+      <div className="episode-notes">
+        <span dangerouslySetInnerHTML={{ __html: fullHtml }} />
+        <ShareLink slug={slug} />
+      </div>
     );
   }
 
@@ -378,6 +390,7 @@ function NoteDisplay({ reason, takeaways }: { reason: string | null; takeaways: 
         <span dangerouslySetInnerHTML={{ __html: fullHtml }} />{" "}
         <span className="note-toggle">less</span>
       </div>
+      <ShareLink slug={slug} />
     </div>
   );
 }
